@@ -33,10 +33,10 @@ def extract_coords(filename):
 
 def create_matrix(data):
     # 8 x 12 matrix of [weights, names]
-    rows=9
-    cols=13
+    rows=8
+    cols=12
     matrix = [[(0,"") for c in range(cols)] for r in range(rows)]
-    print(matrix)
+    # print(matrix)
 
     for i in range(len(data)):
         x = int(data['x'].iloc[i])
@@ -46,7 +46,7 @@ def create_matrix(data):
         else:
             weight = data['kilos'].iloc[i]
         name = data['name'].iloc[i]
-        matrix[x][y] = [weight, name]
+        matrix[x-1][y-1] = [weight, name]
 
     return matrix
 
