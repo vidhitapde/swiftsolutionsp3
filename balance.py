@@ -84,7 +84,7 @@ def check_goal(grid):
     return abs(lweight-rweight) < (lweight + rweight)*0.10 or abs(lweight-rweight) == 0
 
 
-def general_search(grid, heuristic = 0):
+def general_search(grid, heuristic):
     priority_queue = []
     new_config = node(grid)
     new_config.heuristicCost = heuristic
@@ -121,7 +121,7 @@ def general_search(grid, heuristic = 0):
 
         # update heuristics for children puzzle
         for child in children:
-            child.heuristicCost = 0
+            child.heuristicCost = heuristic
             priority_queue.append(child)
             visited.append(child.grid)
 
@@ -178,6 +178,58 @@ def expand(parent, visited):
     
     return children
 
+def a_star_heuristic(grid): 
+    lweight = 0
+    rweight = 0
+    l_num_containers = []
+    r_num_containers = []
+    smallest_side = 0
+    containers = []
+
+    for row in grid:
+        for i in range(0, len(row)//2):
+            if row[i][1] != 'NAN' and row[i][1] != 'UNUSED':
+                lweight += row[i][0]
+                left_weight = row[i][0]
+                l_num_containers.append(left_weight)
+        
+        for j in range(len(row)//2, len(row)):
+            if row[j][1] != 'NAN' and row[j][1] != 'UNUSED':
+                rweight += row[j][0]
+                right_weight = row[j][0]
+                r_num_containers.append(right_weight)
+    # print("l_num_containers: ", l_num_containers)
+    # print("r_num_containers: ", r_num_containers)
+    balance_mass = (lweight + rweight) / 2
+    # print("balance_mass: ", balance_mass)
+    r_deficit = balance_mass - rweight
+    # print("r_deficit", r_deficit)
+    l_deficit = balance_mass - lweight
+    # print("l_deficit", l_deficit)
+
+    if(l_deficit > r_deficit):
+        smallest_side = l_deficit
+        containers = r_num_containers
+    else:
+        smallest_side = r_deficit
+        containers = l_num_containers
+    # print(f"smallest: {smallest_side}")
+    # print(f"Containers: {containers}")
+    descending_order = sorted(containers,reverse=True)
+    # print(descending_order)
+    hn = 0
+    while smallest_side >= 0:
+        for container in descending_order:
+            if(container <= smallest_side):
+                smallest_side-=container
+                hn+=1
+            else:
+                continue
+        break
+    return hn
+
+
+    
 
 def print_grid(grid):
     for row in grid:
@@ -206,7 +258,10 @@ def main():
     grid = create_matrix(data)
     print_grid(grid)
     
-    general_search(grid)
+    # general_search(grid,0)    
+    general_search(grid,a_star_heuristic(grid))
+    # a_star_heuristic(grid)
+
 
    
 if __name__ == '__main__':
