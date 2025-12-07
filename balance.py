@@ -9,6 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import threading
 import os
+import heapq
 
 
 # read in coordinates from file to create dataset
@@ -56,7 +57,11 @@ class node:
         self.depth = 0
         self.heuristicCost = 0
         self.moves = 0
+        self.parent = None
+        self.craneLoc = [0,0]
 
+    def __lt__(self, other):
+        return (self.depth + self.heuristicCost) < (other.depth + other.heuristicCost)
 
 def check_goal(grid):
     lweight = 0
@@ -86,46 +91,51 @@ def check_goal(grid):
 
 def general_search(grid, heuristic):
     priority_queue = []
-    new_config = node(grid)
-    new_config.heuristicCost = heuristic
-    priority_queue.append(new_config)
-
-    nodesVisited = 0
-    maxQueueSize = 0
     visited = []    # list to store configurations that have been visited to prevent duplicate expansions
 
-    visited.append(new_config.grid)
+    new_config = node(grid)
+    new_config.heuristicCost = heuristic
+    heapq.heappush(priority_queue, new_config)
+    visited.append(new_config)
 
     while True:
-        # sort queue by g(n) + h(n)
-        priority_queue = sorted(priority_queue, key=lambda x: (x.depth + x.heuristicCost, x.depth))
-
         if not priority_queue:  # if queue is empty, failure
             print('Failure')
             return
         
-        current = priority_queue[0]
-        del priority_queue[0]
+        current = heapq.heappop(priority_queue)
 
         # goal state is reached
         if check_goal(current.grid):
             print('Goal state!')
             print_grid(current.grid)
+            # print(current.parent.depth)
+            print(f'Cost: {current.depth + (current.craneLoc[0] + current.craneLoc[1])}')
+            # if(current.parent != None):
+            #     print_grid(current.parent.grid)
+            #     print(f'Cost: {current.depth}, parent: {current.parent.depth}')
+            # else:
+            #     print(f'Cost: {current.depth}')
+            # print_grid(current.grid)
+            # if(current.craneLoc != [0,0]):
+            #     print('Return crane to park')
+            #     current.depth += current.craneLoc[0] + current.craneLoc[1]
+            #     current.moves += 1
+            #     print(f'Final Cost: {current.depth}, Final moves: {current.moves}')
+            # else:
+            #     print(f'Final Cost: {current.depth}, Final moves: {current.moves}')
             return
 
-        nodesVisited += 1
-
-        print(f"best state to expand with g(n) = {current.depth} and h(n) = {current.heuristicCost} is {print_grid(current.grid)}")
+        print(f"best state to expand with g(n) = {current.depth} and h(n) = {current.heuristicCost} is ")
+        print_grid(current.grid)
 
         children = expand(current, visited)
 
-        # update heuristics for children puzzle
+        # update heuristic for children puzzle
         for child in children:
-            child.heuristicCost = heuristic
-            priority_queue.append(child)
+            child.heuristicCost = a_star_heuristic(child.grid)
+            heapq.heappush(priority_queue, child)
             visited.append(child.grid)
-
-        maxQueueSize = max(maxQueueSize, len(priority_queue))
 
 
 def find_movable(grid):
@@ -161,22 +171,66 @@ def expand(parent, visited):
     movable_locs = find_movable(parent.grid)
     unused_locs = find_unused(parent.grid)
 
+    craney, cranex = parent.craneLoc[0], parent.craneLoc[1]
+
+    # move crane only
     for [i, j] in movable_locs:
-        for [k, l] in unused_locs:
-            if [k, l] != [i-1, j]:
+        if [craney, cranex] != [i,j]:    # crane is not at movable container
+            child = node(parent.grid)
+            child.parent = parent
+            child.craneLoc = [i, j]
+            child.depth = parent.depth + abs(parent.craneLoc[0] - i) + abs(parent.craneLoc[1] - j)
+            child.moves = parent.moves + 1
+            children.append(child)
+
+    
+    if [craney, cranex] in movable_locs:
+        for [i, j] in unused_locs:
+            if [i,j] != [craney-1, cranex]: # do not drop on top of current container
                 new_grid = [row[:] for row in parent.grid]
-                new_grid[i][j], new_grid[k][l] = new_grid[k][l], new_grid[i][j]
+                new_grid[craney][cranex], new_grid[i][j] = new_grid[i][j], new_grid[craney][cranex]
                 child = node(new_grid)
-                child.depth = parent.depth + 1
+                child.parent = parent
+                child.craneLoc = [i,j]
+                child.depth = parent.depth + move_cost(parent.grid, [craney, cranex], [i,j])
+                child.moves = parent.moves + 1
                 children.append(child)
 
     for child in children:
-        for grid in visited:
-            if child.grid == grid:
+        for seen in visited:
+            if child.grid == seen:
                 del child
                 break
     
     return children
+
+
+def move_cost(grid, container, loc):
+    tallest = find_height(grid, container, loc)
+
+    if tallest == -1:   # case 1: no obstacle
+        return abs(container[0] - loc[0]) + abs(container[1] - loc[1])     # manhattan dist b/w container and loc
+    else:
+        # move up above tallest container + across to loc + down to loc
+        # (tallest - 1) to clear container
+        return abs(container[0] - (tallest-1)) + abs(container[1] - loc[1]) + abs((tallest-1) - loc[0])     
+
+# find tallest height of any container between container to be moved and the final location
+def find_height(grid, container, loc):
+    tallest = -1
+
+    start_col, end_col = sorted((container[1], loc[1]))
+    # print(start_col, end_col)
+
+    for row in range(0, container[0]+1):      # y-axis from top to height of container decrementing by 1
+        for col in range(start_col+1, end_col + 1):    # x-axis between container and location
+            if grid[row][col][1] != 'UNUSED' and grid[row][col][1] != 'NAN':
+                # print(grid[row][col][1])
+                # print('lllllll')
+                return row
+    
+    return tallest
+
 
 def a_star_heuristic(grid): 
     lweight = 0
@@ -256,7 +310,9 @@ def main():
     
     data = extract_coords(input_file)
     grid = create_matrix(data)
-    print_grid(grid)
+    # print(grid)
+
+    # print_grid(grid)
     
     # general_search(grid,0)    
     general_search(grid,a_star_heuristic(grid))
