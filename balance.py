@@ -291,7 +291,7 @@ def find_path(final_node):
     path = [final_node]
     curr = final_node
     while curr.parent:
-        path.append(final_node.parent)
+        path.append(curr.parent)
         curr = curr.parent
 
     path.reverse()
@@ -305,6 +305,7 @@ def find_path(final_node):
         path.append(end_config)
 
     for grid in path:
+        # print("length of path", len(path))
         print(f'Cost: {grid.depth}')
         print_grid_w_crane(grid)
 
