@@ -1,15 +1,13 @@
 import pandas as pd
 import numpy as np
 import math as math
-import random
-import sys
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import threading
 import os
 import heapq
+import copy
 
 
 # read in coordinates from file to create dataset
@@ -86,6 +84,7 @@ def check_goal(grid):
 
     # add check that diff is minimal!!
 
+    print(lweight, rweight)
     return abs(lweight-rweight) < (lweight + rweight)*0.10 or abs(lweight-rweight) == 0
 
 
@@ -109,25 +108,12 @@ def general_search(grid, heuristic):
         if check_goal(current.grid):
             print('Goal state!')
             print_grid(current.grid)
-            # print(current.parent.depth)
             print(f'Cost: {current.depth + (current.craneLoc[0] + current.craneLoc[1])}')
-            # if(current.parent != None):
-            #     print_grid(current.parent.grid)
-            #     print(f'Cost: {current.depth}, parent: {current.parent.depth}')
-            # else:
-            #     print(f'Cost: {current.depth}')
-            # print_grid(current.grid)
-            # if(current.craneLoc != [0,0]):
-            #     print('Return crane to park')
-            #     current.depth += current.craneLoc[0] + current.craneLoc[1]
-            #     current.moves += 1
-            #     print(f'Final Cost: {current.depth}, Final moves: {current.moves}')
-            # else:
-            #     print(f'Final Cost: {current.depth}, Final moves: {current.moves}')
+            find_path(current)
             return
 
-        print(f"best state to expand with g(n) = {current.depth} and h(n) = {current.heuristicCost} is ")
-        print_grid(current.grid)
+        # print(f"best state to expand with g(n) = {current.depth} and h(n) = {current.heuristicCost} is ")
+        # print_grid(current.grid)
 
         children = expand(current, visited)
 
@@ -179,7 +165,8 @@ def expand(parent, visited):
             child = node(parent.grid)
             child.parent = parent
             child.craneLoc = [i, j]
-            child.depth = parent.depth + abs(parent.craneLoc[0] - i) + abs(parent.craneLoc[1] - j)
+            # child.depth = parent.depth + abs(parent.craneLoc[0] - i) + abs(parent.craneLoc[1] - j)
+            child.depth = parent.depth + move_cost(parent.grid, [craney, cranex], [i,j])
             child.moves = parent.moves + 1
             children.append(child)
 
@@ -223,10 +210,8 @@ def find_height(grid, container, loc):
     # print(start_col, end_col)
 
     for row in range(0, container[0]+1):      # y-axis from top to height of container decrementing by 1
-        for col in range(start_col+1, end_col + 1):    # x-axis between container and location
-            if grid[row][col][1] != 'UNUSED' and grid[row][col][1] != 'NAN':
-                # print(grid[row][col][1])
-                # print('lllllll')
+        for col in range(start_col, end_col + 1):    # x-axis between container and location
+            if grid[row][col][1] != 'UNUSED' and grid[row][col][1] != 'NAN' and [row, col] != container and [row, col] != loc:
                 return row
     
     return tallest
@@ -252,14 +237,9 @@ def a_star_heuristic(grid):
                 rweight += row[j][0]
                 right_weight = row[j][0]
                 r_num_containers.append(right_weight)
-    # print("l_num_containers: ", l_num_containers)
-    # print("r_num_containers: ", r_num_containers)
     balance_mass = (lweight + rweight) / 2
-    # print("balance_mass: ", balance_mass)
     r_deficit = balance_mass - rweight
-    # print("r_deficit", r_deficit)
     l_deficit = balance_mass - lweight
-    # print("l_deficit", l_deficit)
 
     if(l_deficit > r_deficit):
         smallest_side = l_deficit
@@ -267,10 +247,7 @@ def a_star_heuristic(grid):
     else:
         smallest_side = r_deficit
         containers = l_num_containers
-    # print(f"smallest: {smallest_side}")
-    # print(f"Containers: {containers}")
     descending_order = sorted(containers,reverse=True)
-    # print(descending_order)
     hn = 0
     while smallest_side >= 0:
         for container in descending_order:
@@ -282,10 +259,36 @@ def a_star_heuristic(grid):
         break
     return hn
 
+def find_path(node):
+    path = [node]
+    while node.parent:
+        path.append(node.parent)
+        node = node.parent
 
-    
+    path.reverse()
+
+    for grid in path:
+        print(f'Cost: {grid.depth}')
+        print_grid_w_crane(grid)
+
 
 def print_grid(grid):
+    for row in grid:
+        for i in range(len(grid[0])):
+            if row[i][1] == 'UNUSED':
+                print(0, end=' ')
+            elif row[i][1] == 'NAN':
+                print('X', end=' ')
+            else:
+                print(row[i][0], end=' ')
+        print( )
+
+
+def print_grid_w_crane(node):
+    grid = copy.deepcopy(node.grid)
+    grid[node.craneLoc[0]][node.craneLoc[1]][0] = 'L'
+    grid[node.craneLoc[0]][node.craneLoc[1]][1] = 'L'
+
     for row in grid:
         for i in range(len(grid[0])):
             if row[i][1] == 'UNUSED':
