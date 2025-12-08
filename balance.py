@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 import heapq
 import copy
+import time
 
 
 # read in coordinates from file to create dataset
@@ -112,6 +113,11 @@ def general_search(grid, heuristic):
     heapq.heappush(priority_queue, new_config)
     visited.append(new_config)
 
+    nodesVisited = 0
+    maxQueueSize = 0
+
+    start_time = time.time()
+
     while True:
         if not priority_queue:  # if queue is empty, failure
             print('Failure')
@@ -125,7 +131,12 @@ def general_search(grid, heuristic):
             print_grid(current.grid)
             print(f'Cost: {current.depth + (current.craneLoc[0] + current.craneLoc[1])}')
             find_path(current)
+            print(f'Elapsed time: {time.time() - start_time}')
+            print(f'Nodes visited: {nodesVisited}')
+            print(f'Max queue size: {maxQueueSize}')
             return
+        
+        nodeVisited += 1
 
         # print(f"best state to expand with g(n) = {current.depth} and h(n) = {current.heuristicCost} is ")
         # print_grid(current.grid)
@@ -137,6 +148,8 @@ def general_search(grid, heuristic):
             child.heuristicCost = a_star_heuristic(child.grid)
             heapq.heappush(priority_queue, child)
             visited.append(child.grid)
+
+        maxQueueSize = max(maxQueueSize, len(priority_queue))
 
 
 def find_movable(grid):
