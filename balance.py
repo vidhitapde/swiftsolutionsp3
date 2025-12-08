@@ -68,6 +68,8 @@ class node:
     def __lt__(self, other):
         return (self.depth + self.heuristicCost) < (other.depth + other.heuristicCost)
 
+    def __lt__(self, other):
+        return (self.depth + self.heuristicCost) < (other.depth + other.heuristicCost)
 
 def check_goal(grid):
     lweight = 0
