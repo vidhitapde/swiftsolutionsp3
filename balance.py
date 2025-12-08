@@ -82,9 +82,6 @@ def check_goal(grid):
     if l_num_containers == 1 and r_num_containers == 0 or l_num_containers == 0 and r_num_containers == 1 or l_num_containers == 1 and r_num_containers == 1:
         return True
 
-    # add check that diff is minimal!!
-
-    print(lweight, rweight)
     return abs(lweight-rweight) < (lweight + rweight)*0.10 or abs(lweight-rweight) == 0
 
 
@@ -259,17 +256,27 @@ def a_star_heuristic(grid):
         break
     return hn
 
-def find_path(node):
-    path = [node]
-    while node.parent:
-        path.append(node.parent)
-        node = node.parent
+def find_path(final_node):
+    path = [final_node]
+    curr = final_node
+    while curr.parent:
+        path.append(final_node.parent)
+        curr = curr.parent
 
     path.reverse()
+    end_config = node(final_node.grid)
+    end_config.depth = final_node.depth + abs(final_node.craneLoc[0] + final_node.craneLoc[1])
+    end_config.craneLoc = [0, 0]
+    end_config.parent = final_node
+    end_config.moves = final_node.moves + 1
+
+    path.append(end_config)
 
     for grid in path:
         print(f'Cost: {grid.depth}')
         print_grid_w_crane(grid)
+
+    return path
 
 
 def print_grid(grid):
