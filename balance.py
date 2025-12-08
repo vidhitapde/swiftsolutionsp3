@@ -84,6 +84,24 @@ def check_goal(grid):
 
     return abs(lweight-rweight) < (lweight + rweight)*0.10 or abs(lweight-rweight) == 0
 
+def count_containers(grid):
+    lweight = 0
+    rweight = 0
+    l_num_containers = 0
+    r_num_containers = 0
+
+    for row in grid:
+        for i in range(0, len(row)//2):
+            if row[i][1] != 'NAN' and row[i][1] != 'UNUSED':
+                lweight += row[i][0]
+                l_num_containers += 1
+
+        for j in range(len(row)//2, len(row)):
+            if row[j][1] != 'NAN' and row[j][1] != 'UNUSED':
+                rweight += row[j][0]
+                r_num_containers += 1
+
+    return (l_num_containers + r_num_containers)
 
 def general_search(grid, heuristic):
     priority_queue = []
@@ -264,13 +282,14 @@ def find_path(final_node):
         curr = curr.parent
 
     path.reverse()
-    end_config = node(final_node.grid)
-    end_config.depth = final_node.depth + abs(final_node.craneLoc[0] + final_node.craneLoc[1])
-    end_config.craneLoc = [0, 0]
-    end_config.parent = final_node
-    end_config.moves = final_node.moves + 1
+    if final_node.craneLoc != [0,0]:
+        end_config = node(final_node.grid)
+        end_config.depth = final_node.depth + abs(final_node.craneLoc[0] + final_node.craneLoc[1])
+        end_config.craneLoc = [0, 0]
+        end_config.parent = final_node
+        end_config.moves = final_node.moves + 1
 
-    path.append(end_config)
+        path.append(end_config)
 
     for grid in path:
         print(f'Cost: {grid.depth}')
