@@ -1,0 +1,5 @@
+12 08 2025: 23:43 Program was started.
+12 08 2025: 23:43 Manifest HMM_Algeciras.txt is opened, there are 2 containers on the ship.
+12 08 2025: 23:43 Balance solution found, it will require 3 moves/26 minutes.
+12 08 2025: 23:43 Balanced manifest 'HMM_Algeciras_OUTBOUND.txt' was written to disk.
+12 08 2025: 23:43 Balanced manifest 'OUTBOUND.txt' was written to disk.

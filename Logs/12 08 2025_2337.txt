@@ -1,0 +1,2 @@
+12 08 2025: 23:37 Program was started.
+12 08 2025: 23:37 Manifest HMM_Algeciras.txt is opened, there are 2 containers on the ship.
